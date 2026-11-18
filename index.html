@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Aegis — AI risk scanner for smart contracts on GIWA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0F1729; --card:#1B2438; --card2:#222E46; --line:#26314a; --line2:#2b3a57;
+  --ink:#F4F7FB; --mute:#9AA7BD; --dim:#6C7A93;
+  --teal:#00D1B2; --tealdk:#0C6E5F; --amber:#F5A623; --red:#FF5C6C; --green:#35D07F;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:
+  radial-gradient(1200px 600px at 80% -10%, #16203a 0%, transparent 60%),
+  var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+.mono{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+a{color:var(--teal);text-decoration:none}
+.wrap{max-width:920px;margin:0 auto;padding:22px 20px 60px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:50%;border:1.8px solid var(--teal);background:var(--card2);
+  display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:18px;color:var(--teal)}
+.brand h1{font-size:26px;letter-spacing:-.01em;line-height:1}
+.brand .tag{font-size:12.5px;color:var(--mute);margin-top:2px}
+.badge{font-family:'JetBrains Mono';font-size:11px;color:var(--teal);border:1px solid var(--line2);
+  background:var(--card);border-radius:999px;padding:5px 11px}
+.btn{font-family:'Inter';font-weight:600;font-size:14px;border:0;border-radius:9px;padding:11px 16px;cursor:pointer;transition:.15s}
+.btn-primary{background:var(--teal);color:#08221d}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;filter:none}
+.btn-ghost{background:var(--card2);color:var(--ink);border:1px solid var(--line2)}
+.btn-ghost:hover{border-color:var(--teal)}
+.hero{margin:26px 0 20px}
+.hero h2{font-size:30px;font-weight:700;letter-spacing:-.02em;max-width:22ch}
+.hero p{color:var(--mute);font-size:15px;margin-top:8px;max-width:62ch}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.scanrow{display:flex;gap:10px;flex-wrap:wrap}
+.scanrow input{flex:1;min-width:240px;background:#0e1626;border:1px solid var(--line2);border-radius:9px;
+  color:var(--ink);font-family:'JetBrains Mono';font-size:14px;padding:12px 13px;outline:none}
+.scanrow input:focus{border-color:var(--teal)}
+.examples{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.examples span{font-size:12px;color:var(--dim)}
+.ex{font-family:'JetBrains Mono';font-size:11.5px;color:var(--mute);background:var(--card2);
+  border:1px solid var(--line2);border-radius:7px;padding:5px 9px;cursor:pointer}
+.ex:hover{border-color:var(--teal);color:var(--ink)}
+.status{margin-top:12px;font-size:13px;color:var(--mute);min-height:18px}
+.status.err{color:var(--red)} .status.ok{color:var(--green)}
+.readout{margin-top:16px;background:linear-gradient(160deg,#182034,#12192b);border:1px solid var(--line2);
+  border-radius:12px;padding:18px;display:none}
+.readout.show{display:block}
+.rtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:10px;flex-wrap:wrap}
+.rtop .lbl{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.rtop .addr{font-family:'JetBrains Mono';font-size:12px;color:var(--teal)}
+.rmeta{font-family:'JetBrains Mono';font-size:11.5px;color:var(--dim);margin-bottom:10px}
+.rmeta b{color:var(--green);font-weight:500}
+.gauge{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.gauge .score{font-family:'Space Grotesk';font-weight:700;font-size:52px;line-height:.9}
+.gauge .of{font-size:14px;color:var(--dim)}
+.gauge .verdict{margin-left:auto;text-align:right}
+.gauge .verdict .v{font-family:'Space Grotesk';font-weight:600;font-size:18px}
+.gauge .verdict .vs{font-size:12px;color:var(--dim)}
+.bar{height:8px;border-radius:5px;background:#0e1626;margin:12px 0;overflow:hidden;border:1px solid var(--line2)}
+.bar>i{display:block;height:100%;border-radius:5px;width:0;transition:width .6s ease;
+  background:linear-gradient(90deg,var(--green),var(--amber) 62%,var(--red))}
+.summary{margin:10px 0 4px;padding:12px 14px;border-left:3px solid var(--teal);background:rgba(0,209,178,.06);
+  border-radius:0 8px 8px 0;font-size:14.5px;line-height:1.5;color:var(--ink)}
+.rflags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.rflag{font-family:'JetBrains Mono';font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--line2);color:var(--dim)}
+.rflag.on{color:#0F1729;font-weight:500;background:var(--amber);border-color:var(--amber)}
+.findings{margin-top:14px;border-top:1px solid var(--line2);padding-top:12px}
+.findings h4{font-family:'Space Grotesk';font-size:13px;font-weight:600;margin-bottom:8px}
+.finding{display:flex;gap:9px;margin:8px 0;line-height:1.4}
+.finding .d{width:8px;height:8px;border-radius:50%;flex:none;margin-top:6px}
+.finding .t{font-size:13.5px;color:var(--ink);font-weight:600}
+.finding .e{font-size:13px;color:var(--mute)}
+.src{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;border:1px solid var(--line2);color:var(--dim)}
+.src.ai{color:var(--teal);border-color:var(--tealdk)}
+.prior{margin-top:12px;font-size:12.5px;color:var(--dim);font-family:'JetBrains Mono'}
+.actions{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.txnote{font-size:12.5px;color:var(--mute)}
+.enginebadge{font-family:'JetBrains Mono';font-size:10.5px;color:var(--dim);margin-top:10px}
+.enginebadge b{color:var(--teal);font-weight:500}
+.how{margin-top:26px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.how .n{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.how .n .k{font-family:'JetBrains Mono';font-size:10px;color:var(--teal);letter-spacing:.06em}
+.how .n .t{font-family:'Space Grotesk';font-weight:600;font-size:14px;margin-top:3px}
+.how .n .d{font-size:11.5px;color:var(--mute);margin-top:3px;line-height:1.35}
+.foot{margin-top:26px;border-top:1px solid var(--card2);padding-top:14px;display:flex;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono';font-size:12px;color:var(--dim)}
+.foot a{color:var(--mute)}
+@media(max-width:640px){.how{grid-template-columns:repeat(2,1fr)}.hero h2{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">
+      <div class="mark">Æ</div>
+      <div><h1>Aegis</h1><div class="tag">AI risk scanner for smart contracts on GIWA</div></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="badge" id="net">GIWA Sepolia</span>
+      <button class="btn btn-ghost" id="connect">Connect wallet</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h2>Know what you're signing — before you sign.</h2>
+    <p>Paste any contract address on GIWA Sepolia. Aegis reads the verified source with an AI auditor, cross-checks the bytecode,
+       and can write a verifiable attestation to the on-chain ScanRegistry.</p>
+  </div>
+
+  <div class="panel">
+    <div class="scanrow">
+      <input id="addr" placeholder="0x… contract address" spellcheck="false" autocomplete="off"/>
+      <button class="btn btn-primary" id="scan">Scan</button>
+    </div>
+    <div class="examples">
+      <span>Try:</span>
+      <span class="ex" data-a="0x6C831F9d7051E94589807D2C3d924bb195b5de94">ScanRegistry (self)</span>
+      <span class="ex" data-a="0x25ceeBa0a118DA5C346a5328D7cC5f26aa331d17">TestUSDC</span>
+      <span class="ex" data-a="0x8836969bcED57e523BF1565ff4e5bD546D4Ec773">Marketplace</span>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="readout" id="readout">
+      <div class="rtop"><span class="lbl">Scan readout</span><span class="addr" id="rAddr">—</span></div>
+      <div class="rmeta" id="rMeta"></div>
+      <div class="gauge">
+        <span class="score" id="rScore">—</span><span class="of">/100</span>
+        <span class="verdict"><div class="v" id="rVerdict">—</div><div class="vs" id="rVerdictSub"></div></span>
+      </div>
+      <div class="bar"><i id="rBar"></i></div>
+      <div class="summary" id="rSummary" style="display:none"></div>
+      <div class="rflags" id="rFlags"></div>
+      <div class="findings" id="findingsWrap" style="display:none"><h4>Findings</h4><div id="rFindings"></div></div>
+      <div class="prior" id="rPrior" style="display:none"></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="attest" disabled>Write attestation on-chain</button>
+        <span class="txnote" id="txnote"></span>
+      </div>
+      <div class="enginebadge" id="engine"></div>
+    </div>
+  </div>
+
+  <div class="how">
+    <div class="n"><div class="k">01 INGEST</div><div class="t">Read source + bytecode</div><div class="d">Verified Solidity from the explorer, bytecode from the chain.</div></div>
+    <div class="n"><div class="k">02 ANALYZE</div><div class="t">AI audit + opcode scan</div><div class="d">Claude reasons over the code; heuristics cross-check the bytecode.</div></div>
+    <div class="n"><div class="k">03 SCORE</div><div class="t">0–100 risk</div><div class="d">Findings collapse to one score + category flags.</div></div>
+    <div class="n"><div class="k">04 ATTEST</div><div class="t">On-chain</div><div class="d">Write the result to ScanRegistry on GIWA.</div></div>
+  </div>
+
+  <div class="foot">
+    <a id="cLink" href="#" target="_blank">Verified contract ↗</a>
+    <span><a href="https://github.com/Makabeez" target="_blank">GitHub /Makabeez</a> · Track 04 · GASOK</span>
+  </div>
+</div>
+
+<script>
+const CONTRACT="0x6C831F9d7051E94589807D2C3d924bb195b5de94";
+const CHAIN_HEX="0x164ce";
+const RPC="https://sepolia-rpc.giwa.io", EXPLORER="https://sepolia-explorer.giwa.io";
+const CHAIN_PARAMS={chainId:CHAIN_HEX,chainName:"GIWA Sepolia",nativeCurrency:{name:"ETH",symbol:"ETH",decimals:18},rpcUrls:[RPC],blockExplorerUrls:[EXPLORER]};
+const ABI=[
+  "function attest(address target,uint8 riskScore,uint16 flags,bytes32 reportHash,uint32 schemaVersion)",
+  "function getAttestation(address) view returns (tuple(uint8 riskScore,uint16 flags,bytes32 reportHash,uint64 timestamp,address attester,uint32 schemaVersion))",
+  "function hasAttestation(address) view returns (bool)"
+];
+const FLAGS=[{bit:1,key:"Reentrancy"},{bit:2,key:"Access control"},{bit:4,key:"Dangerous approval"},{bit:8,key:"Honeypot / rug"},{bit:16,key:"Oracle manipulation"},{bit:32,key:"Unsafe upgrade"}];
+document.getElementById("cLink").href=EXPLORER+"/address/"+CONTRACT;
+
+let provider=null, signer=null, account=null, lastScan=null;
+const $=(id)=>document.getElementById(id);
+const setStatus=(m,cls="")=>{const s=$("status");s.textContent=m;s.className="status "+cls;};
+const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function ensureChain(){
+  const cur=await window.ethereum.request({method:"eth_chainId"});
+  if(cur.toLowerCase()===CHAIN_HEX) return;
+  try{ await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:CHAIN_HEX}]}); }
+  catch(e){ if(e.code===4902){ await window.ethereum.request({method:"wallet_addEthereumChain",params:[CHAIN_PARAMS]}); } else throw e; }
+}
+async function connect(){
+  if(!window.ethereum){ setStatus("No wallet found. Install MetaMask to attest (scanning works without one).","err"); return; }
+  try{
+    await window.ethereum.request({method:"eth_requestAccounts"});
+    await ensureChain();
+    provider=new ethers.BrowserProvider(window.ethereum);
+    signer=await provider.getSigner();
+    account=await signer.getAddress();
+    $("connect").textContent=account.slice(0,6)+"…"+account.slice(-4);
+    if(lastScan) $("attest").disabled=false;
+  }catch(e){ setStatus(e.message||"Wallet connection failed","err"); }
+}
+function readProvider(){ return provider || new ethers.JsonRpcProvider(RPC); }
+
+// local fallback (bytecode heuristics) — only used if /api/analyze is unreachable
+function localAnalyze(codeHex){
+  const code=codeHex.startsWith("0x")?codeHex.slice(2):codeHex;
+  const bytes=[]; for(let i=0;i<code.length;i+=2) bytes.push(parseInt(code.substr(i,2),16));
+  const ops=new Set(), push4=new Set();
+  for(let i=0;i<bytes.length;i++){ const op=bytes[i]; ops.add(op);
+    if(op>=0x60&&op<=0x7f){ if(op===0x63){const s=code.substr((i+1)*2,8).toLowerCase(); if(s.length===8) push4.add(s);} i+=op-0x5f; } }
+  const findings=[]; let flags=0, score=8;
+  const add=(bit,sev,title,expl,pts)=>{flags|=bit;score+=pts;findings.push({severity:sev,title,explanation:expl,source:"bytecode"});};
+  if(ops.has(0xf4)) add(32,"high","Uses DELEGATECALL","Proxy / upgradeable pattern; logic can be swapped.",26);
+  if(ops.has(0xff)) add(8,"high","Contains SELFDESTRUCT","Contract can be destroyed, funds redirected.",24);
+  if(push4.has("3659cfe6")||push4.has("4f1ef286")) add(32,"medium","Exposes upgradeTo","UUPS-style upgrade entrypoint.",12);
+  if(push4.has("095ea7b3")||push4.has("a22cb465")) add(4,"low","Exposes approval interface","approve / setApprovalForAll present.",8);
+  if(ops.has(0xf1)||ops.has(0xfa)){score+=6;findings.push({severity:"low",title:"Makes external calls",explanation:"Interacts with other contracts.",source:"bytecode"});}
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  return {ok:true,verified:false,engine:"static (offline fallback)",score,flags,findings,summary:"API unreachable — bytecode analysis only.",report:JSON.stringify({score,flags,engine:"static-fallback",findings:findings.map(f=>f.title)})};
+}
+function verdictOf(s){ return s>=60?["High risk","var(--red)"]:s>=25?["Medium risk","var(--amber)"]:["Low risk","var(--green)"]; }
+
+async function scan(){
+  const addr=$("addr").value.trim();
+  $("attest").disabled=true; $("txnote").textContent=""; $("readout").classList.remove("show");
+  if(!ethers.isAddress(addr)){ setStatus("Enter a valid 0x address.","err"); return; }
+  setStatus("Analyzing — reading source and bytecode, running AI audit…");
+  let res;
+  try{
+    const r=await fetch("/api/analyze?address="+encodeURIComponent(addr));
+    res=await r.json();
+  }catch(e){
+    try{ const code=await readProvider().getCode(addr); if(code==="0x"){ setStatus("No contract code at this address (EOA / wallet).","err"); return; } res=localAnalyze(code); }
+    catch(e2){ setStatus("Scan failed: "+(e2.shortMessage||e2.message),"err"); return; }
+  }
+  if(!res.ok){ setStatus(res.error||"Scan failed","err"); return; }
+  render(addr,res);
+  try{
+    const reg=new ethers.Contract(CONTRACT,ABI,readProvider());
+    if(await reg.hasAttestation(addr)){ const a=await reg.getAttestation(addr);
+      $("rPrior").style.display="block";
+      $("rPrior").textContent="On-chain: previously attested score "+a.riskScore+" by "+a.attester.slice(0,6)+"…"+a.attester.slice(-4);
+    } else $("rPrior").style.display="none";
+  }catch(_){}
+  lastScan={addr,...res};
+  if(account) $("attest").disabled=false;
+  const n=res.findings.length;
+  setStatus((res.engine==="ai+static"?"AI audit complete — ":"Scan complete — ")+n+" finding"+(n===1?"":"s")+".", "ok");
+}
+function render(addr,res){
+  $("readout").classList.add("show");
+  $("rAddr").textContent=addr.slice(0,10)+"…"+addr.slice(-6);
+  $("rMeta").innerHTML = res.verified
+    ? "<b>verified</b> · "+esc(res.name||"contract")+(res.compiler?" · "+esc(res.compiler):"")
+    : "unverified · bytecode analysis only";
+  $("rScore").textContent=res.score;
+  const [vtxt,vcol]=verdictOf(res.score);
+  $("rScore").style.color=vcol; $("rVerdict").textContent=vtxt; $("rVerdict").style.color=vcol;
+  const nFlags=FLAGS.filter(f=>res.flags&f.bit).length;
+  $("rVerdictSub").textContent=nFlags+" categor"+(nFlags===1?"y":"ies")+" flagged";
+  $("rBar").style.width=res.score+"%";
+  const sm=$("rSummary"); if(res.summary){ sm.style.display="block"; sm.textContent=res.summary; } else sm.style.display="none";
+  const fl=$("rFlags"); fl.innerHTML="";
+  FLAGS.forEach(f=>{ const el=document.createElement("span"); el.className="rflag"+((res.flags&f.bit)?" on":""); el.textContent=f.key; fl.appendChild(el); });
+  const fw=$("findingsWrap"), fc=$("rFindings"); fc.innerHTML=""; fw.style.display="block";
+  if(res.findings.length){
+    res.findings.forEach(f=>{ const row=document.createElement("div"); row.className="finding";
+      const col=(f.severity==="high"||f.severity==="critical")?"var(--red)":f.severity==="medium"?"var(--amber)":"var(--teal)";
+      row.innerHTML='<span class="d" style="background:'+col+'"></span><div><div class="t">'+esc(f.title)+'<span class="src'+(f.source==="ai"?" ai":"")+'">'+(f.source==="ai"?"AI":"bytecode")+'</span></div><div class="e">'+esc(f.explanation||"")+'</div></div>';
+      fc.appendChild(row); });
+  } else fc.innerHTML='<div class="finding"><span class="d" style="background:var(--green)"></span><div class="e">No issues found.</div></div>';
+  const eng=$("engine");
+  if(res.engine==="ai+static") eng.innerHTML="Engine: <b>AI audit ("+esc(res.model||"Claude")+")</b> + static bytecode"+(res.truncated?" · source truncated":"");
+  else eng.innerHTML="Engine: static bytecode"+(res.aiError?" · <span style='color:var(--amber)'>"+esc(res.aiError)+"</span>":"");
+}
+
+async function attest(){
+  if(!signer||!lastScan) return;
+  try{
+    await ensureChain();
+    const reg=new ethers.Contract(CONTRACT,ABI,signer);
+    const reportHash=ethers.keccak256(ethers.toUtf8Bytes(lastScan.report||"{}"));
+    $("txnote").textContent="Confirm in wallet…"; $("attest").disabled=true;
+    const tx=await reg.attest(lastScan.addr,lastScan.score,lastScan.flags,reportHash,2);
+    $("txnote").innerHTML='Pending… <span class="mono">'+tx.hash.slice(0,10)+'…</span>';
+    await tx.wait();
+    $("txnote").innerHTML='Attested ✓ <a target="_blank" href="'+EXPLORER+'/tx/'+tx.hash+'">view tx ↗</a>';
+  }catch(e){
+    const m=(e.info&&e.info.error&&e.info.error.message)||e.shortMessage||e.message||"";
+    if(/NotAttester|revert/i.test(m)) $("txnote").innerHTML='<span style="color:var(--amber)">Attesting needs an authorized key — scanning is public.</span>';
+    else $("txnote").innerHTML='<span style="color:var(--red)">'+esc(m||"Transaction failed")+'</span>';
+    $("attest").disabled=false;
+  }
+}
+$("connect").onclick=connect; $("scan").onclick=scan; $("attest").onclick=attest;
+$("addr").addEventListener("keydown",e=>{if(e.key==="Enter")scan();});
+document.querySelectorAll(".ex").forEach(el=>el.onclick=()=>{$("addr").value=el.dataset.a;scan();});
+if(window.ethereum){ window.ethereum.on&&window.ethereum.on("accountsChanged",()=>location.reload());
+  window.ethereum.on&&window.ethereum.on("chainChanged",()=>location.reload()); }
+</script>
+</body>
+</html>
