@@ -43,28 +43,29 @@ When GIWA brings Upbit-scale users on-chain, the risk check has to be there on d
 ## Architecture
 
 ```
-                      ┌──────────────────────────── Vercel ────────────────────────────┐
-  Browser / wallet ──▶│  index.html   ──▶  /api/analyze                                 │
-  Launchpad / dApp ──▶│                     ├─ eth_getCode (GIWA RPC)                    │
-  <img> badge     ──▶ │  /api/badge   ◀─┐   ├─ static opcode walk (metadata-safe)       │
-                      │  /api/stats   ◀─┤   ├─ verified source (GIWA Blockscout)         │
-                      │                 │   ├─ Claude audit → findings + severities      │
-                      │                 │   ├─ deterministic rubric → 0–100 + flags      │
-                      │                 │   └─ Dojang: is the deployer Upbit-verified?   │
-                      └─────────────────┼──────────────────────────────────────────────┘
-                                        │ reads
-                                        ▼
-            ┌───────────────── GIWA Sepolia (chainId 91342) ─────────────────┐
-            │  ScanRegistry  0x6C831F9d7051E94589807D2C3d924bb195b5de94       │
-            │   attestBatch() ─ riskOf() ─ isFlagged() ─ getAttestation()      │
-            └──────────────────────────────▲─────────────────────────────────┘
-                                           │ attestBatch() every hour
-                              ┌────────────┴─────────────┐
-                              │  aegis-watcher (PM2)      │  github.com/Makabeez/aegis-watcher
-                              │  new verified contracts → │
-                              │  /api/analyze → batch     │
-                              │  bytecode-hash dedupe     │
-                              └───────────────────────────┘
+                      ┌─ Vercel ───────────────────────────────────────────────────────┐
+Browser / wallet  --> │ index.html  ---->  /api/analyze                                │
+Launchpad / dApp  --> │                     |- eth_getCode (GIWA RPC)                  │
+<img> badge       --> │ /api/badge  <--+    |- static opcode walk (metadata-safe)      │
+                      │ /api/stats  <--+    |- verified source (GIWA Blockscout)       │
+                      │                |    |- Claude audit -> findings + severities   │
+                      │                |    |- deterministic rubric -> 0-100 + flags   │
+                      │                |    '- Dojang: is the deployer Upbit-verified? │
+                      └────────────────────────────────────────────────────────────────┘
+                                       | reads
+                                       v
+                      ┌─ GIWA Sepolia (chainId 91342) ─────────────────────────────────┐
+                      │ ScanRegistry  0x6C831F9d7051E94589807D2C3d924bb195b5de94       │
+                      │ attestBatch() - riskOf() - isFlagged() - getAttestation()      │
+                      └────────────────────────────────────────────────────────────────┘
+                                                     ^
+                                                     | attestBatch() every hour
+                                     ┌─ aegis-watcher (PM2) ────────────┐
+                                     │ new verified contracts           │
+                                     │   -> /api/analyze                │  github.com/Makabeez/aegis-watcher
+                                     │   -> attestBatch (20 per tx)     │
+                                     │ bytecode-hash dedupe             │
+                                     └──────────────────────────────────┘
 ```
 
 ## Tech stack
