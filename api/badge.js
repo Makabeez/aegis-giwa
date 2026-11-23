@@ -73,8 +73,8 @@ module.exports = async (req, res) => {
 
     const color = score >= 60 ? "#FF5C6C" : score >= 25 ? "#F5A623" : "#35D07F";
     let label = score >= 60 ? `${score}/100 high` : score >= 25 ? `${score}/100 medium` : `${score}/100 low`;
-    let w = 84;
-    if (await upbitVerifiedDeployer(address)) { label += " \u2713"; w = 94; }  // KYC-verified deployer
+    if (await upbitVerifiedDeployer(address)) label += " \u2713";  // KYC-verified deployer
+    const w = Math.ceil(label.length * 7.2) + 16;  // fits Verdana 11px; the fixed 84px clipped "39/100 medium"
     return res.status(200).end(svg("Aegis", label, color, w));
   } catch (e) {
     return res.status(200).end(svg("Aegis", "unavailable", "#6C7A93", 80));
