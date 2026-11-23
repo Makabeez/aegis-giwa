@@ -4,8 +4,8 @@
 
 ### **AI risk scores for every smart contract on GIWA — written on-chain, readable by any wallet or dApp.**
 
-[![Live App](https://img.shields.io/badge/Live_App-aegis--giwa.vercel.app-35D07F?style=for-the-badge&logo=vercel&logoColor=white)](https://aegis-giwa.vercel.app)
-[![Report](https://img.shields.io/badge/Phase_3_Report-aegis--report-0F1729?style=for-the-badge)](https://aegis-report.vercel.app)
+[![Live App](https://img.shields.io/badge/Live_App-aegisgiwa.com-35D07F?style=for-the-badge&logo=vercel&logoColor=white)](https://www.aegisgiwa.com)
+[![Report](https://img.shields.io/badge/Phase_3_Report-report.aegisgiwa.com-0F1729?style=for-the-badge)](https://report.aegisgiwa.com)
 [![Contract](https://img.shields.io/badge/ScanRegistry-0x6C83…de94-16203a?style=for-the-badge)](https://sepolia-explorer.giwa.io/address/0x6C831F9d7051E94589807D2C3d924bb195b5de94)
 [![License](https://img.shields.io/badge/License-MIT-9AA7BD?style=for-the-badge)](LICENSE)
 [![Built on GIWA](https://img.shields.io/badge/Built_on-GIWA_Chain-35D07F?style=for-the-badge)](https://giwa.io)
@@ -141,7 +141,7 @@ Public scans are rate-limited (`RL_PER_MIN`, default 8/min per IP; `RL_DAILY_MAX
 **Embed a badge:**
 
 ```html
-<img src="https://aegis-giwa.vercel.app/api/badge?address=0xYOUR_CONTRACT" alt="Aegis risk score">
+<img src="https://www.aegisgiwa.com/api/badge?address=0xYOUR_CONTRACT" alt="Aegis risk score">
 ```
 
 ## Accuracy — what we found and fixed
@@ -177,7 +177,7 @@ To run your own registry: deploy `contracts/ScanRegistry.sol` (solc 0.8.30, opti
 ## Related
 
 - **[aegis-watcher](https://github.com/Makabeez/aegis-watcher)** — the autonomous scanner that keeps the registry current.
-- **[Phase 3 report & Phase 4 plan](https://aegis-report.vercel.app)** — results, milestones, KPIs.
+- **[Phase 3 report & Phase 4 plan](https://report.aegisgiwa.com)** — results, milestones, KPIs.
 
 ## Attribution
 
