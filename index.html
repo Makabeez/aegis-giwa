@@ -294,6 +294,19 @@ async function attest(){
 $("connect").onclick=connect; $("scan").onclick=scan; $("attest").onclick=attest;
 $("addr").addEventListener("keydown",e=>{if(e.key==="Enter")scan();});
 document.querySelectorAll(".ex").forEach(el=>el.onclick=()=>{$("addr").value=el.dataset.a;scan();});
+// Deep link: /?address=0x… prefills the address and shows the on-chain score.
+// It does not start an AI scan, so partner pages can link here without spending the daily AI budget.
+(async()=>{
+  const qa=new URLSearchParams(location.search).get("address");
+  if(!qa||!ethers.isAddress(qa)) return;
+  $("addr").value=qa;
+  try{
+    const reg=new ethers.Contract(CONTRACT,ABI,readProvider());
+    if(await reg.hasAttestation(qa)){ const a=await reg.getAttestation(qa);
+      setStatus("On-chain Aegis score: "+a.riskScore+"/100 (schema v"+a.schemaVersion+"). Press Scan for a fresh AI audit.","ok");
+    } else setStatus("Not scored on-chain yet. Press Scan to audit it now.");
+  }catch(_){ setStatus("Press Scan to audit this contract."); }
+})();
 if(window.ethereum){ window.ethereum.on&&window.ethereum.on("accountsChanged",()=>location.reload());
   window.ethereum.on&&window.ethereum.on("chainChanged",()=>location.reload()); }
 </script>
