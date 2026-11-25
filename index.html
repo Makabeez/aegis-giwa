@@ -156,7 +156,7 @@ a{color:var(--teal);text-decoration:none}
   <div class="how">
     <div class="n"><div class="k">01 INGEST</div><div class="t">Read source + bytecode</div><div class="d">Verified Solidity from the explorer, bytecode from the chain.</div></div>
     <div class="n"><div class="k">02 ANALYZE</div><div class="t">AI audit + opcode scan</div><div class="d">Claude reasons over the code; heuristics cross-check the bytecode.</div></div>
-    <div class="n"><div class="k">03 SCORE</div><div class="t">0–100 risk</div><div class="d">Findings collapse to one score + category flags.</div></div>
+    <div class="n"><div class="k">03 SCORE</div><div class="t">0–100 risk</div><div class="d">Higher = riskier. Findings collapse to one score + category flags.</div></div>
     <div class="n"><div class="k">04 ATTEST</div><div class="t">On-chain</div><div class="d">Write the result to ScanRegistry on GIWA.</div></div>
   </div>
 
@@ -174,12 +174,13 @@ const CHAIN_PARAMS={chainId:CHAIN_HEX,chainName:"GIWA Sepolia",nativeCurrency:{n
 const ABI=[
   "function attest(address target,uint8 riskScore,uint16 flags,bytes32 reportHash,uint32 schemaVersion)",
   "function getAttestation(address) view returns (tuple(uint8 riskScore,uint16 flags,bytes32 reportHash,uint64 timestamp,address attester,uint32 schemaVersion))",
-  "function hasAttestation(address) view returns (bool)"
+  "function hasAttestation(address) view returns (bool)",
+  "function isAttester(address) view returns (bool)"
 ];
 const FLAGS=[{bit:1,key:"Reentrancy"},{bit:2,key:"Access control"},{bit:4,key:"Dangerous approval"},{bit:8,key:"Honeypot / rug"},{bit:16,key:"Oracle manipulation"},{bit:32,key:"Unsafe upgrade"}];
 document.getElementById("cLink").href=EXPLORER+"/address/"+CONTRACT;
 
-let provider=null, signer=null, account=null, lastScan=null;
+let provider=null, signer=null, account=null, lastScan=null, canAttest=false;
 const $=(id)=>document.getElementById(id);
 const setStatus=(m,cls="")=>{const s=$("status");s.textContent=m;s.className="status "+cls;};
 const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -199,7 +200,10 @@ async function connect(){
     signer=await provider.getSigner();
     account=await signer.getAddress();
     $("connect").textContent=account.slice(0,6)+"…"+account.slice(-4);
-    if(lastScan) $("attest").disabled=false;
+    try{ canAttest=await new ethers.Contract(CONTRACT,ABI,readProvider()).isAttester(account); }catch(_){ canAttest=false; }
+    if(!canAttest){ $("attest").textContent="On-chain write: attester only"; $("attest").disabled=true;
+      $("txnote").textContent="Scores are written by the Aegis watcher. Anyone can read them on-chain."; }
+    if(lastScan&&canAttest) $("attest").disabled=false;
   }catch(e){ setStatus(e.message||"Wallet connection failed","err"); }
 }
 function readProvider(){ return provider || new ethers.JsonRpcProvider(RPC); }
@@ -225,7 +229,7 @@ function verdictOf(s){ return s>=60?["High risk","var(--red)"]:s>=25?["Medium ri
 
 async function scan(){
   const addr=$("addr").value.trim();
-  $("attest").disabled=true; $("txnote").textContent=""; $("readout").classList.remove("show");
+  $("attest").disabled=true; $("txnote").textContent=(account&&!canAttest)?"Scores are written by the Aegis watcher. Anyone can read them on-chain.":""; $("readout").classList.remove("show");
   if(!ethers.isAddress(addr)){ setStatus("Enter a valid 0x address.","err"); return; }
   setStatus("Analyzing — reading source and bytecode, running AI audit…");
   let res;
@@ -246,7 +250,7 @@ async function scan(){
     } else $("rPrior").style.display="none";
   }catch(_){}
   lastScan={addr,...res};
-  if(account) $("attest").disabled=false;
+  if(account&&canAttest) $("attest").disabled=false;
   const n=res.findings.length;
   setStatus((res.engine==="ai+static"?"AI audit complete — ":"Scan complete — ")+n+" finding"+(n===1?"":"s")+".", "ok");
 }
@@ -284,7 +288,7 @@ async function attest(){
     const reg=new ethers.Contract(CONTRACT,ABI,signer);
     const reportHash=ethers.keccak256(ethers.toUtf8Bytes(lastScan.report||"{}"));
     $("txnote").textContent="Confirm in wallet…"; $("attest").disabled=true;
-    const tx=await reg.attest(lastScan.addr,lastScan.score,lastScan.flags,reportHash,2);
+    const tx=await reg.attest(lastScan.addr,lastScan.score,lastScan.flags,reportHash,4);
     $("txnote").innerHTML='Pending… <span class="mono">'+tx.hash.slice(0,10)+'…</span>';
     await tx.wait();
     $("txnote").innerHTML='Attested ✓ <a target="_blank" href="'+EXPLORER+'/tx/'+tx.hash+'">view tx ↗</a>';
