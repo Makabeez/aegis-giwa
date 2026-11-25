@@ -282,7 +282,7 @@ async function scanInner(busy){
     const reg=new ethers.Contract(CONTRACT,ABI,readProvider());
     if(await reg.hasAttestation(addr)){ const a=await reg.getAttestation(addr);
       $("rPrior").style.display="block";
-      $("rPrior").textContent="On-chain: previously attested score "+a.riskScore+" by "+a.attester.slice(0,6)+"…"+a.attester.slice(-4);
+      $("rPrior").textContent="On-chain: previously attested score "+a.riskScore+" by "+a.attester.slice(0,6)+"…"+a.attester.slice(-4)+" · a fresh AI scan can differ";
     } else $("rPrior").style.display="none";
   }catch(_){}
   lastScan={addr,...res};
