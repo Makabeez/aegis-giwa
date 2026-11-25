@@ -93,6 +93,8 @@ a{color:var(--teal);text-decoration:none}
 .foot{margin-top:26px;border-top:1px solid var(--card2);padding-top:14px;display:flex;
   justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono';font-size:12px;color:var(--dim)}
 .foot a{color:var(--mute)}
+.disc{margin-top:14px;font-size:11.5px;line-height:1.5;color:var(--dim)}
+.disc a{color:var(--mute)}
 @media(max-width:640px){.how{grid-template-columns:repeat(2,1fr)}.hero h2{font-size:24px}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -148,6 +150,8 @@ a{color:var(--teal);text-decoration:none}
       <div class="enginebadge" id="engine"></div>
     </div>
   </div>
+
+  <p class="disc">Aegis gives an automated risk signal, not a security audit or financial advice. Scores can be wrong, so check the findings before you rely on one. Think a score is wrong? <a href="https://github.com/Makabeez/aegis-giwa/issues/new?title=Score%20review%3A%200x" target="_blank" rel="noopener">Open an issue</a> and we re-check it by hand.</p>
 
   <div class="how">
     <div class="n"><div class="k">01 INGEST</div><div class="t">Read source + bytecode</div><div class="d">Verified Solidity from the explorer, bytecode from the chain.</div></div>
