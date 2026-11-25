@@ -58,7 +58,7 @@ function svg(label, value, color, w2) {
 module.exports = async (req, res) => {
   const address = String((req.query && req.query.address) || "").trim();
   res.setHeader("content-type", "image/svg+xml; charset=utf-8");
-  res.setHeader("cache-control", "public, max-age=300, s-maxage=300");
+  res.setHeader("cache-control", "public, max-age=300, s-maxage=900, stale-while-revalidate=86400");
   res.setHeader("access-control-allow-origin", "*");
   try {
     if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return res.status(200).end(svg("Aegis", "bad address", "#6C7A93", 78));

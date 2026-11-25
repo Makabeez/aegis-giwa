@@ -8,7 +8,7 @@ const SEL_TOTAL = "0x60485742"; // totalAttestations()
 
 module.exports = async (req, res) => {
   res.setHeader("content-type", "application/json");
-  res.setHeader("cache-control", "public, max-age=120, s-maxage=120");
+  res.setHeader("cache-control", "public, max-age=120, s-maxage=600, stale-while-revalidate=86400");
   res.setHeader("access-control-allow-origin", "*");
   try {
     const r = await fetch(RPC, {
