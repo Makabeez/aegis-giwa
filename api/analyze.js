@@ -294,6 +294,10 @@ module.exports = async (req, res) => {
       scoring: { base: BASE_SCORE, weights: SEV_WEIGHT, note: "score = base + top severity + 0.35 x remaining severities, capped 0-100" },
     };
     cache.set(key, { t: Date.now(), result });
+    // A full AI result is cached at the edge for a day: the same address returns the same audit
+    // (AI output varies run to run), and repeat scans cost no function CPU or AI credits.
+    // Static-only (degraded) results are never cached. A new deploy clears the edge cache.
+    if (result.engine === "ai+static") res.setHeader("cache-control", "public, max-age=0, s-maxage=86400");
     return res.status(200).end(JSON.stringify(result));
   } catch (e) {
     return res.status(500).end(JSON.stringify({ ok: false, error: e.message || "analysis failed" }));
