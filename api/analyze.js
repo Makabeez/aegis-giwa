@@ -6,7 +6,7 @@ const RPC = "https://sepolia-rpc.giwa.io";
 const EXPLORER_API = "https://sepolia-explorer.giwa.io/api/v2";
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 const MAX_SOURCE_CHARS = 60000;       // cap what we send to the model
-const MAX_TOKENS = 1500;
+const MAX_TOKENS = 3000;
 const CACHE_TTL_MS = 10 * 60 * 1000;  // per warm instance
 const RL_PER_MIN   = parseInt(process.env.RL_PER_MIN   || "8", 10);    // per IP
 const RL_DAILY_MAX = parseInt(process.env.RL_DAILY_MAX || "500", 10);  // AI calls/day/instance
@@ -176,9 +176,11 @@ async function aiAudit(name, source) {
   if (!r.ok) { const t = await r.text(); throw new Error(`anthropic ${r.status}: ${t.slice(0, 160)}`); }
   const d = await r.json();
   const text = (d.content || []).map(c => c.text || "").join("").trim();
-  const clean = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  // Tolerate prose or code fences around the JSON: parse from the first "{" to the last "}".
+  const i0 = text.indexOf("{"), i1 = text.lastIndexOf("}");
+  const clean = i0 >= 0 && i1 > i0 ? text.slice(i0, i1 + 1) : text;
   let parsed;
-  try { parsed = JSON.parse(clean); } catch { throw new Error("AI returned non-JSON"); }
+  try { parsed = JSON.parse(clean); } catch { throw new Error("AI returned non-JSON" + (d.stop_reason === "max_tokens" ? " (output cut off)" : "")); }
   const findings = (Array.isArray(parsed.findings) ? parsed.findings : []).map(f => ({
     category: CAT_TO_FLAG[f.category] ? f.category : "other",
     severity: ["low", "medium", "high", "critical"].includes(f.severity) ? f.severity : "medium",
