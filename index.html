@@ -54,6 +54,13 @@ a{color:var(--teal);text-decoration:none}
 .ex:hover{border-color:var(--teal);color:var(--ink)}
 .status{margin-top:12px;font-size:13px;color:var(--mute);min-height:18px}
 .status.err{color:var(--red)} .status.ok{color:var(--green)}
+.status.busy{color:var(--teal);display:flex;align-items:center;gap:10px}
+.status.busy::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--teal);flex:none;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+.btn-primary.busy{opacity:1;cursor:progress;display:inline-flex;align-items:center;gap:8px}
+.btn-primary.busy::before{content:"";width:13px;height:13px;border-radius:50%;border:2px solid #08221d;border-right-color:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.status.busy::before,.btn-primary.busy::before{animation:none}}
 .readout{margin-top:16px;background:linear-gradient(160deg,#182034,#12192b);border:1px solid var(--line2);
   border-radius:12px;padding:18px;display:none}
 .readout.show{display:block}
@@ -240,11 +247,27 @@ function localAnalyze(codeHex){
 }
 function verdictOf(s){ return s>=60?["High risk","var(--red)"]:s>=25?["Medium risk","var(--amber)"]:["Low risk","var(--green)"]; }
 
+let scanBusy=false;
 async function scan(){
+  if(scanBusy) return;
+  const addr=$("addr").value.trim();
+  if(!ethers.isAddress(addr)) return scanInner();
+  scanBusy=true;
+  const btn=$("scan"), t0=Date.now();
+  btn.disabled=true; btn.classList.add("busy"); btn.textContent="Scanning…";
+  const tick=()=>{ const s=Math.floor((Date.now()-t0)/1000);
+    const step=s<3?"Reading verified source and bytecode":s<25?"AI auditor reviewing the code":"Still working: long contracts can take up to a minute";
+    setStatus(step+"… "+s+"s","busy"); };
+  tick(); const iv=setInterval(tick,1000);
+  try{ await scanInner(true); }
+  finally{ clearInterval(iv); scanBusy=false; btn.disabled=false; btn.classList.remove("busy"); btn.textContent="Scan";
+    if($("status").classList.contains("busy")) setStatus(""); }
+}
+async function scanInner(busy){
   const addr=$("addr").value.trim();
   $("attest").disabled=true; $("txnote").textContent=(account&&!canAttest)?"Scores are written by the Aegis watcher. Anyone can read them on-chain.":""; $("readout").classList.remove("show");
   if(!ethers.isAddress(addr)){ setStatus("Enter a valid 0x address.","err"); return; }
-  setStatus("Analyzing — reading source and bytecode, running AI audit…");
+  if(!busy) setStatus("Analyzing — reading source and bytecode, running AI audit…");
   let res;
   try{
     const r=await fetch("/api/analyze?address="+encodeURIComponent(addr));
