@@ -120,12 +120,15 @@ function getAttestation(address target) external view returns (Attestation memor
 **Gate anything on it in one line:**
 
 ```solidity
-interface IScanRegistry { function riskOf(address) external view returns (uint8); }
+interface IScanRegistry {
+    function hasAttestation(address) external view returns (bool);
+    function riskOf(address) external view returns (uint8);
+}
 
-require(
-    IScanRegistry(0x6C831F9d7051E94589807D2C3d924bb195b5de94).riskOf(token) < 50,
-    "Aegis: high-risk token"
-);
+IScanRegistry aegis = IScanRegistry(0x6C831F9d7051E94589807D2C3d924bb195b5de94);
+// riskOf() returns 0 for a contract that was never scored, so check hasAttestation() first:
+// an unscanned contract must not pass as "safest".
+require(aegis.hasAttestation(token) && aegis.riskOf(token) < 50, "Aegis: unscanned or high-risk token");
 ```
 
 ## API

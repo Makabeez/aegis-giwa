@@ -38,6 +38,10 @@ a{color:var(--teal);text-decoration:none}
 .hero{margin:26px 0 20px}
 .hero h2{font-size:30px;font-weight:700;letter-spacing:-.02em;max-width:22ch}
 .hero p{color:var(--mute);font-size:15px;margin-top:8px;max-width:62ch}
+.proof{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.proof span,.proof a{font-family:'JetBrains Mono';font-size:12px;border:1px solid var(--card2);border-radius:999px;padding:6px 11px;color:var(--mute);text-decoration:none}
+.proof b{color:var(--teal);font-weight:600}
+.proof a:hover{border-color:var(--teal);color:var(--teal)}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
 .scanrow{display:flex;gap:10px;flex-wrap:wrap}
 .scanrow input{flex:1;min-width:240px;background:#0e1626;border:1px solid var(--line2);border-radius:9px;
@@ -114,8 +118,16 @@ a{color:var(--teal);text-decoration:none}
 
   <div class="hero">
     <h2>Know what you're signing — before you sign.</h2>
-    <p>Paste any contract address on GIWA Sepolia. Aegis reads the verified source with an AI auditor, cross-checks the bytecode,
-       and can write a verifiable attestation to the on-chain ScanRegistry.</p>
+    <p>Aegis scores every newly verified contract on GIWA Sepolia on its own: an AI auditor reads the verified source, the bytecode is cross-checked,
+       and the 0–100 risk score is written to an on-chain registry any wallet, launchpad or dApp can read. Paste an address to see the full audit.</p>
+    <div class="proof">
+      <span><b id="liveTotal">27,000+</b> attestations on-chain</span>
+      <span><b>23,291</b> unique contracts scored</span>
+      <span><b>hourly</b> autonomous watcher</span>
+      <span><b>1,782</b> scores self-corrected</span>
+      <a href="https://report.aegisgiwa.com" target="_blank" rel="noopener">Phase 3 report ↗</a>
+      <a href="https://sepolia-explorer.giwa.io/address/0x6C831F9d7051E94589807D2C3d924bb195b5de94?tab=txs" target="_blank" rel="noopener">Registry on explorer ↗</a>
+    </div>
   </div>
 
   <div class="panel">
@@ -179,6 +191,7 @@ const ABI=[
 ];
 const FLAGS=[{bit:1,key:"Reentrancy"},{bit:2,key:"Access control"},{bit:4,key:"Dangerous approval"},{bit:8,key:"Honeypot / rug"},{bit:16,key:"Oracle manipulation"},{bit:32,key:"Unsafe upgrade"}];
 document.getElementById("cLink").href=EXPLORER+"/address/"+CONTRACT;
+fetch("/api/stats").then(r=>r.json()).then(d=>{const n=Number(d&&d.totalAttestations);if(n>0)document.getElementById("liveTotal").textContent=n.toLocaleString("en-US");}).catch(()=>{});
 
 let provider=null, signer=null, account=null, lastScan=null, canAttest=false;
 const $=(id)=>document.getElementById(id);
