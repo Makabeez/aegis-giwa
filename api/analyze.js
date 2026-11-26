@@ -166,6 +166,15 @@ function clip(t, n) {
   return end > n * 0.5 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, "") + "…";
 }
 
+// Enforce the published rubric in code: honeypot-rug is only for a role that can trap, take or
+// dilute users' funds. The model sometimes files delay/DoS/griefing findings there; if a finding
+// names none of the trap/take/dilute mechanisms, it is re-filed as access-control. Applies to all.
+const RUG_SIGNAL = /\b(mint\w*|blacklist\w*|black-list\w*|whitelist\w*|fees?|tax\w*|drain\w*|sweep\w*|withdraw\w*|rescue\w*|seiz\w*|confiscat\w*|steal\w*|liquidity|sell\w*|pause\w*|freez\w*|honeypot|rug\w*|selfdestruct|backdoor)\b/i;
+function rugGuard(f) {
+  if (f.category !== "honeypot-rug") return f;
+  return RUG_SIGNAL.test(f.title + " " + f.explanation) ? f : { ...f, category: "access-control" };
+}
+
 const AUDIT_TOOL = {
   name: "report_audit",
   description: "Return the security audit of the contract.",
@@ -228,7 +237,7 @@ async function aiAudit(name, source) {
     title: String(f.title || "Finding").slice(0, 120),
     explanation: clip(String(f.explanation || ""), 520),
     source: "ai",
-  }));
+  })).map(rugGuard);
   let flags = 0; for (const f of findings) flags |= (CAT_TO_FLAG[f.category] || 0);
   const score = scoreFromFindings(findings);
   return { score, flags, findings, summary: String(parsed.summary || "").slice(0, 400), truncated, model: MODEL, usage: d.usage || null };
