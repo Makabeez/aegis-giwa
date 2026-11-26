@@ -1,9 +1,10 @@
 // /api/stats -> live coverage numbers. No AI call; cheap, cacheable, public.
 // Feeds the public stats page and gives reviewers a number they can verify themselves.
 
-const RPC = "https://sepolia-rpc.giwa.io";
-const EXPLORER_API = "https://sepolia-explorer.giwa.io/api/v2";
-const REGISTRY = "0x6C831F9d7051E94589807D2C3d924bb195b5de94";
+const CHAIN = require("./_chain");
+const RPC = CHAIN.rpc;
+const EXPLORER_API = CHAIN.explorerApi;
+const REGISTRY = CHAIN.registry;
 const SEL_TOTAL = "0x60485742"; // totalAttestations()
 
 module.exports = async (req, res) => {
@@ -31,8 +32,8 @@ module.exports = async (req, res) => {
 
     return res.status(200).end(JSON.stringify({
       ok: true,
-      network: "GIWA Sepolia",
-      chainId: 91342,
+      network: CHAIN.chainName,
+      chainId: CHAIN.chainId,
       registry: REGISTRY,
       totalAttestations: total,
       verifiedContractsOnChain: verifiedTotal,

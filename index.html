@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="/api/config"></script>
 <style>
 :root{
   --bg:#0F1729; --card:#1B2438; --card2:#222E46; --line:#26314a; --line2:#2b3a57;
@@ -118,22 +119,22 @@ a{color:var(--teal);text-decoration:none}
       <div><h1>Aegis</h1><div class="tag">AI risk scanner for smart contracts on GIWA</div></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
-      <span class="badge" id="net">GIWA Sepolia</span>
+      <span class="badge chain-name" id="net">GIWA Sepolia</span>
       <button class="btn btn-ghost" id="connect">Connect wallet</button>
     </div>
   </div>
 
   <div class="hero">
     <h2>Know what you're signing — before you sign.</h2>
-    <p>Aegis scores every newly verified contract on GIWA Sepolia on its own: an AI auditor reads the verified source, the bytecode is cross-checked,
+    <p>Aegis scores every newly verified contract on <span class="chain-name">GIWA Sepolia</span> on its own: an AI auditor reads the verified source, the bytecode is cross-checked,
        and the 0–100 risk score is written to an on-chain registry any wallet, launchpad or dApp can read. Paste an address to see the full audit.</p>
     <div class="proof">
       <span><b id="liveTotal">27,000+</b> attestations on-chain</span>
-      <span><b>23,291</b> unique contracts scored</span>
+      <span class="testnet-only"><b>23,291</b> unique contracts scored</span>
       <span><b>hourly</b> autonomous watcher</span>
-      <span><b>1,782</b> scores self-corrected</span>
-      <a href="https://report.aegisgiwa.com" target="_blank" rel="noopener">Phase 3 report ↗</a>
-      <a href="https://sepolia-explorer.giwa.io/address/0x6C831F9d7051E94589807D2C3d924bb195b5de94?tab=txs" target="_blank" rel="noopener">Registry on explorer ↗</a>
+      <span class="testnet-only"><b>1,782</b> scores self-corrected</span>
+      <a class="testnet-only" href="https://report.aegisgiwa.com" target="_blank" rel="noopener">Phase 3 report ↗</a>
+      <a id="regLink" href="https://sepolia-explorer.giwa.io/address/0x6C831F9d7051E94589807D2C3d924bb195b5de94?tab=txs" target="_blank" rel="noopener">Registry on explorer ↗</a>
     </div>
   </div>
 
@@ -144,9 +145,9 @@ a{color:var(--teal);text-decoration:none}
     </div>
     <div class="examples">
       <span>Try:</span>
-      <span class="ex" data-a="0x6C831F9d7051E94589807D2C3d924bb195b5de94">ScanRegistry (self)</span>
-      <span class="ex" data-a="0x25ceeBa0a118DA5C346a5328D7cC5f26aa331d17">TestUSDC</span>
-      <span class="ex" data-a="0x8836969bcED57e523BF1565ff4e5bD546D4Ec773">Marketplace</span>
+      <span class="ex" id="exSelf" data-a="0x6C831F9d7051E94589807D2C3d924bb195b5de94">ScanRegistry (self)</span>
+      <span class="ex testnet-only" data-a="0x25ceeBa0a118DA5C346a5328D7cC5f26aa331d17">TestUSDC</span>
+      <span class="ex testnet-only" data-a="0x8836969bcED57e523BF1565ff4e5bD546D4Ec773">Marketplace</span>
     </div>
     <div class="status" id="status"></div>
 
@@ -186,10 +187,17 @@ a{color:var(--teal);text-decoration:none}
 </div>
 
 <script>
-const CONTRACT="0x6C831F9d7051E94589807D2C3d924bb195b5de94";
-const CHAIN_HEX="0x164ce";
-const RPC="https://sepolia-rpc.giwa.io", EXPLORER="https://sepolia-explorer.giwa.io";
-const CHAIN_PARAMS={chainId:CHAIN_HEX,chainName:"GIWA Sepolia",nativeCurrency:{name:"ETH",symbol:"ETH",decimals:18},rpcUrls:[RPC],blockExplorerUrls:[EXPLORER]};
+// Network settings come from /api/config (window.AEGIS_CFG); the defaults are GIWA Sepolia.
+const CFG=Object.assign({chainId:91342,chainName:"GIWA Sepolia",rpc:"https://sepolia-rpc.giwa.io",explorer:"https://sepolia-explorer.giwa.io",registry:"0x6C831F9d7051E94589807D2C3d924bb195b5de94"},window.AEGIS_CFG||{});
+const CONTRACT=CFG.registry;
+const CHAIN_HEX="0x"+Number(CFG.chainId).toString(16);
+const RPC=CFG.rpc, EXPLORER=CFG.explorer;
+document.querySelectorAll(".chain-name").forEach(e=>{e.textContent=CFG.chainName;});
+document.getElementById("regLink").href=EXPLORER+"/address/"+CONTRACT+"?tab=txs";
+document.getElementById("exSelf").dataset.a=CONTRACT;
+// Sepolia-only numbers and examples are hidden on any other network
+if(Number(CFG.chainId)!==91342) document.querySelectorAll(".testnet-only").forEach(e=>e.remove());
+const CHAIN_PARAMS={chainId:CHAIN_HEX,chainName:CFG.chainName,nativeCurrency:{name:"ETH",symbol:"ETH",decimals:18},rpcUrls:[RPC],blockExplorerUrls:[EXPLORER]};
 const ABI=[
   "function attest(address target,uint8 riskScore,uint16 flags,bytes32 reportHash,uint32 schemaVersion)",
   "function getAttestation(address) view returns (tuple(uint8 riskScore,uint16 flags,bytes32 reportHash,uint64 timestamp,address attester,uint32 schemaVersion))",

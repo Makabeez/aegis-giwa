@@ -1,0 +1,13 @@
+{
+  "name": "aegis-registry-deploy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "plan": "node deploy-registry.mjs",
+    "deploy": "node deploy-registry.mjs --send"
+  },
+  "dependencies": {
+    "ethers": "6.17.0",
+    "solc": "0.8.30"
+  }
+}

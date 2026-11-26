@@ -9,7 +9,7 @@ pragma solidity 0.8.30;
 ///         No ETH is handled and there are no external calls, so the contract has no
 ///         reentrancy or value-transfer surface - it is a pure storage + events registry.
 contract ScanRegistry {
-    string public constant VERSION = "1.0.0";
+    string public constant VERSION = "1.1.0";
 
     // ---------------------------------------------------------------------
     // Risk category bitmap - bit positions used inside `Attestation.flags`
@@ -37,6 +37,7 @@ contract ScanRegistry {
     // Storage
     // ---------------------------------------------------------------------
     address public owner;
+    address public pendingOwner;                      // proposed owner, must call acceptOwnership()
     uint256 public totalAttestations;                 // running count - a live KPI
     mapping(address => bool) public isAttester;       // who may write attestations
     mapping(address => bool) public hasAttestation;   // has `target` ever been scanned
@@ -56,6 +57,7 @@ contract ScanRegistry {
     );
     event AttesterSet(address indexed attester, bool enabled);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
     // ---------------------------------------------------------------------
     // Errors
@@ -65,6 +67,7 @@ contract ScanRegistry {
     error ZeroAddress();
     error InvalidScore(uint8 score);
     error LengthMismatch();
+    error NotPendingOwner();
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -96,11 +99,20 @@ contract ScanRegistry {
         emit AttesterSet(attester, enabled);
     }
 
-    /// @notice Transfer ownership of the registry.
+    /// @notice Propose a new owner. Ownership only moves when that address calls `acceptOwnership()`,
+    ///         so a mistyped address can never lock the registry. Proposing again replaces the proposal.
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    /// @notice Called by the proposed owner to take ownership.
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        emit OwnershipTransferred(owner, msg.sender);
+        owner = msg.sender;
+        pendingOwner = address(0);
     }
 
     // ---------------------------------------------------------------------

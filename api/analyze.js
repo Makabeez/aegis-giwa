@@ -2,8 +2,9 @@
 // GET  /api/analyze?address=0x...   or   POST {address}
 // Pipeline: eth_getCode -> bytecode heuristics -> Blockscout verified source -> Claude audit -> merged result
 
-const RPC = "https://sepolia-rpc.giwa.io";
-const EXPLORER_API = "https://sepolia-explorer.giwa.io/api/v2";
+const CHAIN = require("./_chain");
+const RPC = CHAIN.rpc;
+const EXPLORER_API = CHAIN.explorerApi;
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 const MAX_SOURCE_CHARS = 60000;       // cap what we send to the model
 const MAX_TOKENS = 3000;

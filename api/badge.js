@@ -2,8 +2,9 @@
 // Reads the on-chain ScanRegistry only — no AI call, so it's cheap and safe to embed.
 // Usage:  <img src="https://aegis-giwa-makabeezs-projects.vercel.app/api/badge?address=0x..." alt="Aegis risk score">
 
-const RPC = "https://sepolia-rpc.giwa.io";
-const REGISTRY = "0x6C831F9d7051E94589807D2C3d924bb195b5de94";
+const CHAIN = require("./_chain");
+const RPC = CHAIN.rpc;
+const REGISTRY = CHAIN.registry;
 // keccak("getAttestation(address)") -> selector
 const SEL_GET = "0xf9b71797";
 const SEL_HAS = "0xe14d9449";
@@ -12,7 +13,7 @@ const SEL_HAS = "0xe14d9449";
 const DOJANG_SCROLL = "0xd5077b67dcb56caC8b270C7788FC3E6ee03F17B9";
 const UPBIT_ATTESTER = "0xd99b42e778498aa3c9c1f6a012359130252780511687a35982e8e52735453034";
 const SEL_IS_VERIFIED = "0xba03e205";
-const EXPLORER_API = "https://sepolia-explorer.giwa.io/api/v2";
+const EXPLORER_API = CHAIN.explorerApi;
 
 async function upbitVerifiedDeployer(addr) {
   try {
